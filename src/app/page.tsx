@@ -1,18 +1,20 @@
 import Link from "next/link";
-import { getFeaturedProducts } from "@/lib/catalog/products";
-import { categories } from "@/lib/catalog/categories";
+import { getFeaturedProducts, getCategories } from "@/lib/catalog/queries";
 import { ProductCard } from "@/components/product-card";
 import { Hero } from "@/components/hero";
 
-const SPEC_STRIP = [
-  { label: "Sourced from", value: "Japan" },
-  { label: "Categories", value: `${categories.length}` },
-  { label: "Ships to", value: "40+ countries" },
-  { label: "Fitment", value: "Verified before dispatch" },
-];
+export default async function Home() {
+  const [featured, categories] = await Promise.all([
+    getFeaturedProducts(),
+    getCategories(),
+  ]);
 
-export default function Home() {
-  const featured = getFeaturedProducts();
+  const specStrip = [
+    { label: "Sourced from", value: "Japan" },
+    { label: "Categories", value: `${categories.length}` },
+    { label: "Ships to", value: "40+ countries" },
+    { label: "Fitment", value: "Verified before dispatch" },
+  ];
 
   return (
     <main className="flex flex-1 flex-col">
@@ -20,7 +22,7 @@ export default function Home() {
 
       <section className="border-b border-border/80 bg-card/40">
         <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-8 sm:grid-cols-4">
-          {SPEC_STRIP.map((item) => (
+          {specStrip.map((item) => (
             <div key={item.label} className="flex flex-col gap-1">
               <span className="font-mono text-[0.65rem] uppercase tracking-widest text-muted-foreground">
                 {item.label}

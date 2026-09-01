@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductBySlug } from "@/lib/catalog/products";
-import { getCategoryBySlug } from "@/lib/catalog/categories";
+import { getProductBySlug } from "@/lib/catalog/queries";
 import { formatMoney } from "@/lib/money";
 import { StatusTag } from "@/components/status-tag";
 import { AddToCartButton } from "./add-to-cart-button";
+import type { VerificationStatus, Vehicle } from "@/lib/catalog/types";
 
 const AVAILABILITY: Record<
   string,
@@ -16,20 +16,35 @@ const AVAILABILITY: Record<
   backordered: { label: "Backordered", tone: "warning" },
 };
 
+const VERIFICATION_TONE: Record<VerificationStatus, "positive" | "neutral" | "warning"> = {
+  VERIFIED: "positive",
+  SUPPLIER_CONFIRMED: "positive",
+  INFERRED: "neutral",
+  UNKNOWN: "warning",
+  NOT_COMPATIBLE: "warning",
+};
+
+function formatVehicle(vehicle: Vehicle): string {
+  const generation = vehicle.generation ? ` (${vehicle.generation})` : "";
+  const years = vehicle.yearEnd ? `${vehicle.yearStart}–${vehicle.yearEnd}` : `${vehicle.yearStart}+`;
+  return `${vehicle.make} ${vehicle.model}${generation}, ${years}`;
+}
+
 export default async function ProductPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const category = getCategoryBySlug(product.categorySlug);
   const availability = AVAILABILITY[product.availability];
+  const image = product.images[0] ?? "/part-placeholder.svg";
+  const primaryPartNumber = product.partNumbers[0];
 
   return (
     <main className="mx-auto max-w-4xl flex-1 px-6 py-12">
@@ -37,11 +52,11 @@ export default async function ProductPage({
         <Link href="/parts" className="hover:text-foreground">
           Parts
         </Link>
-        {category ? (
+        {product.categorySlug ? (
           <>
             {" / "}
-            <Link href={`/parts?category=${category.slug}`} className="hover:text-foreground">
-              {category.name}
+            <Link href={`/parts?category=${product.categorySlug}`} className="hover:text-foreground">
+              {product.categoryName}
             </Link>
           </>
         ) : null}
@@ -50,8 +65,8 @@ export default async function ProductPage({
       <div className="grid gap-10 md:grid-cols-2">
         <div className="relative aspect-square overflow-hidden rounded-md border border-border bg-muted">
           <Image
-            src={product.image}
-            alt={product.name}
+            src={image}
+            alt={product.canonicalName}
             fill
             sizes="(min-width: 768px) 50vw, 100vw"
             priority
@@ -62,13 +77,15 @@ export default async function ProductPage({
         <div className="flex flex-col gap-5">
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-primary">
-              {product.brand}
+              {product.brand.name}
             </p>
-            <h1 className="mt-1 text-2xl font-semibold">{product.name}</h1>
+            <h1 className="mt-1 text-2xl font-semibold">{product.canonicalName}</h1>
           </div>
 
           <p className="font-mono font-tabular text-3xl font-semibold">
-            {formatMoney(product.priceMinorUnits, product.currency)}
+            {product.priceMinorUnits !== null
+              ? formatMoney(product.priceMinorUnits, product.currency)
+              : "Price on request"}
           </p>
 
           <StatusTag tone={availability.tone} className="w-fit">
@@ -80,14 +97,18 @@ export default async function ProductPage({
           </p>
 
           <dl className="divide-y divide-border rounded-md border border-border font-mono text-xs">
-            <div className="flex justify-between px-3 py-2">
-              <dt className="text-muted-foreground">Part number</dt>
-              <dd className="font-tabular">{product.partNumber}</dd>
-            </div>
-            <div className="flex justify-between px-3 py-2">
-              <dt className="text-muted-foreground">Origin</dt>
-              <dd>{product.countryOfOrigin}</dd>
-            </div>
+            {primaryPartNumber ? (
+              <div className="flex justify-between px-3 py-2">
+                <dt className="text-muted-foreground">Part number</dt>
+                <dd className="font-tabular">{primaryPartNumber.number}</dd>
+              </div>
+            ) : null}
+            {product.countryOfOrigin ? (
+              <div className="flex justify-between px-3 py-2">
+                <dt className="text-muted-foreground">Origin</dt>
+                <dd>{product.countryOfOrigin}</dd>
+              </div>
+            ) : null}
             {product.specifications.map((spec) => (
               <div key={spec} className="flex justify-between px-3 py-2 gap-4">
                 <dt className="text-muted-foreground">Spec</dt>
@@ -96,22 +117,43 @@ export default async function ProductPage({
             ))}
           </dl>
 
+          {product.partNumbers.some((pn) => pn.notes) ? (
+            <p className="text-xs text-muted-foreground">
+              {product.partNumbers.find((pn) => pn.notes)?.notes}
+            </p>
+          ) : null}
+
           <div>
             <h2 className="mb-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               Compatible vehicles
             </h2>
-            <ul className="space-y-1 text-sm">
-              {product.compatibleVehicles.map((vehicle) => (
-                <li key={vehicle} className="flex items-center gap-2">
-                  <span className="size-1 rounded-full bg-primary" />
-                  {vehicle}
-                </li>
-              ))}
-            </ul>
+            {product.compatibility.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Compatibility not yet documented for this part.
+              </p>
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {product.compatibility.map((entry) => (
+                  <li key={entry.id} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="size-1 rounded-full bg-primary" />
+                      {formatVehicle(entry.vehicle)}
+                      <StatusTag tone={VERIFICATION_TONE[entry.verificationStatus]}>
+                        {entry.verificationStatus.replace("_", " ")}
+                      </StatusTag>
+                    </div>
+                    {entry.notes ? (
+                      <p className="pl-3 text-xs text-muted-foreground">{entry.notes}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className="mt-3 text-xs text-muted-foreground">
-              Compatibility shown here is inferred from catalog data and has not been
-              verified against a manufacturer source. We&apos;ll confirm fitment before
-              your order ships.
+              SUPPLIER CONFIRMED means the fitment claim comes directly from the
+              manufacturer&apos;s own listing. INFERRED means it was confirmed via a
+              secondary/retailer source. We&apos;ll verify fitment again before your
+              order ships.
             </p>
           </div>
 

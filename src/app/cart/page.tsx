@@ -9,7 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 export default function CartPage() {
-  const { items, subtotalMinorUnits, removeItem, setQuantity } = useCart();
+  const { items, subtotalMinorUnits, removeItem, setQuantity, isHydrated } = useCart();
+
+  if (!isHydrated) {
+    return <main className="flex-1" />;
+  }
 
   if (items.length === 0) {
     return (

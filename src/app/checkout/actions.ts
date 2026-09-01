@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getProductById } from "@/lib/catalog/products";
+import { getProductForPricing } from "@/lib/catalog/queries";
 import { logger } from "@/lib/logger";
 import type {
   Order,
@@ -75,9 +75,14 @@ export async function placeOrder(
   let currency: string | null = null;
 
   for (const cartItem of parsed.data.items) {
-    const product = getProductById(cartItem.productId);
+    const product = await getProductForPricing(cartItem.productId);
     if (!product) {
       return { error: "One of the items in your cart is no longer available." };
+    }
+    if (product.priceMinorUnits === null) {
+      return {
+        error: `${product.name} requires a price quote before it can be ordered. Please contact us.`,
+      };
     }
     if (currency && currency !== product.currency) {
       return { error: "Mixed-currency carts are not supported yet." };

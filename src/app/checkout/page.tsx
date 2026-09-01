@@ -15,13 +15,17 @@ const initialState: CheckoutFormState = { error: null };
 const SHIPPING_COST_MINOR_UNITS = 4900;
 
 export default function CheckoutPage() {
-  const { items, subtotalMinorUnits } = useCart();
+  const { items, subtotalMinorUnits, isHydrated } = useCart();
 
   const boundAction = placeOrder.bind(
     null,
     items.map((item) => ({ productId: item.productId, quantity: item.quantity }))
   );
   const [state, formAction, pending] = useActionState(boundAction, initialState);
+
+  if (!isHydrated) {
+    return <main className="flex-1" />;
+  }
 
   if (items.length === 0) {
     return (

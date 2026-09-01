@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { searchProducts } from "@/lib/catalog/products";
-import { categories } from "@/lib/catalog/categories";
+import { searchProducts, getCategories } from "@/lib/catalog/queries";
 import { ProductCard } from "@/components/product-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,10 @@ export default async function PartsPage({
   searchParams: Promise<{ category?: string; q?: string }>;
 }) {
   const { category, q } = await searchParams;
-  const results = searchProducts({ category, query: q });
+  const [results, categories] = await Promise.all([
+    searchProducts({ category, query: q }),
+    getCategories(),
+  ]);
 
   return (
     <main className="mx-auto max-w-6xl flex-1 px-6 py-12">

@@ -6,6 +6,7 @@ import {
   useEffect,
   useReducer,
   useRef,
+  useState,
   type ReactNode,
 } from "react";
 
@@ -82,6 +83,10 @@ interface CartContextValue {
   items: CartItem[];
   itemCount: number;
   subtotalMinorUnits: number;
+  /** False until the initial localStorage read has completed. Pages that
+   *  branch on an empty cart should wait for this to avoid a flash of
+   *  "cart is empty" before the real (persisted) cart has loaded. */
+  isHydrated: boolean;
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
   removeItem: (productId: string) => void;
   setQuantity: (productId: string, quantity: number) => void;
@@ -92,6 +97,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [] });
+  const [isHydrated, setIsHydrated] = useState(false);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
@@ -102,6 +108,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       // Corrupted or inaccessible localStorage; start with an empty cart.
+    } finally {
+      setIsHydrated(true);
     }
   }, []);
 
@@ -130,6 +138,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     items: state.items,
     itemCount,
     subtotalMinorUnits,
+    isHydrated,
     addItem: (item, quantity = 1) => dispatch({ type: "ADD_ITEM", item, quantity }),
     removeItem: (productId) => dispatch({ type: "REMOVE_ITEM", productId }),
     setQuantity: (productId, quantity) =>

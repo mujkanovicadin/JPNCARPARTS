@@ -5,16 +5,17 @@ import Image from "next/image";
 import { motion } from "motion/react";
 import { formatMoney } from "@/lib/money";
 import { StatusTag } from "@/components/status-tag";
-import type { Product } from "@/lib/catalog/types";
+import type { Availability, ProductSummary } from "@/lib/catalog/types";
 
-const AVAILABILITY: Record<Product["availability"], { label: string; tone: "positive" | "neutral" | "warning" }> = {
+const AVAILABILITY: Record<Availability, { label: string; tone: "positive" | "neutral" | "warning" }> = {
   in_stock: { label: "In stock", tone: "positive" },
   made_to_order: { label: "Made to order", tone: "neutral" },
   backordered: { label: "Backordered", tone: "warning" },
 };
 
-export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
+export function ProductCard({ product, index = 0 }: { product: ProductSummary; index?: number }) {
   const availability = AVAILABILITY[product.availability];
+  const image = product.images[0] ?? "/part-placeholder.svg";
 
   return (
     <motion.div
@@ -30,8 +31,8 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
       >
         <div className="relative aspect-square overflow-hidden bg-muted">
           <Image
-            src={product.image}
-            alt={product.name}
+            src={image}
+            alt={product.canonicalName}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
             className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
@@ -42,11 +43,14 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
         </div>
         <div className="flex flex-col gap-1 p-4">
           <p className="font-mono text-[0.7rem] uppercase tracking-wide text-muted-foreground">
-            {product.brand} · {product.partNumber}
+            {product.brandName}
+            {product.primaryPartNumber ? ` · ${product.primaryPartNumber}` : ""}
           </p>
-          <p className="font-medium leading-snug">{product.name}</p>
+          <p className="font-medium leading-snug">{product.canonicalName}</p>
           <p className="font-mono font-tabular text-lg font-semibold text-foreground">
-            {formatMoney(product.priceMinorUnits, product.currency)}
+            {product.priceMinorUnits !== null
+              ? formatMoney(product.priceMinorUnits, product.currency)
+              : "Price on request"}
           </p>
         </div>
       </Link>
