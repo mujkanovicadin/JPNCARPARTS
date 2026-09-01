@@ -20,7 +20,11 @@ export default async function AccountPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">Signed in as {user.email}</p>
-          <Button variant="outline" render={<Link href="/orders">View orders</Link>} />
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<Link href="/orders">View orders</Link>}
+          />
           <form action={signOut}>
             <Button type="submit" variant="ghost" className="w-full">
               Sign out

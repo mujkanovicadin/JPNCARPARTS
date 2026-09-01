@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth/get-user";
 import { formatMoney } from "@/lib/money";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusTag } from "@/components/status-tag";
+import { statusTone } from "@/lib/orders/status-tone";
 import { Separator } from "@/components/ui/separator";
 import { ClearCartOnConfirm } from "./clear-cart-on-confirm";
 import type { Order } from "@/lib/orders/types";
@@ -39,24 +40,27 @@ export default async function OrderDetailPage({
       <ClearCartOnConfirm confirmed={confirmed === "1"} />
 
       {confirmed === "1" ? (
-        <p className="mb-6 rounded-md bg-secondary px-4 py-3 text-sm text-secondary-foreground">
+        <p className="mb-6 rounded-sm border border-primary/30 bg-primary/10 px-4 py-3 text-sm">
           Order placed. This was a simulated payment — no real charge was made.
         </p>
       ) : null}
 
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Order {order.id.slice(0, 8)}</h1>
-        <Badge variant="secondary">{order.status}</Badge>
+        <div>
+          <p className="font-mono text-xs uppercase tracking-widest text-primary">Order</p>
+          <h1 className="font-mono text-2xl font-semibold">{order.id.slice(0, 8)}</h1>
+        </div>
+        <StatusTag tone={statusTone(order.status)}>{order.status}</StatusTag>
       </div>
 
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Items</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent className="flex flex-col gap-3 font-mono font-tabular text-sm">
           {order.items.map((item) => (
-            <div key={item.productId} className="flex justify-between text-sm">
-              <span>
+            <div key={item.productId} className="flex justify-between">
+              <span className="font-sans">
                 {item.name} × {item.quantity}
               </span>
               <span>
@@ -65,17 +69,17 @@ export default async function OrderDetailPage({
             </div>
           ))}
           <Separator />
-          <div className="flex justify-between text-sm">
-            <span>Subtotal</span>
+          <div className="flex justify-between">
+            <span className="font-sans text-muted-foreground">Subtotal</span>
             <span>{formatMoney(order.subtotal, order.currency)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span>Shipping</span>
+          <div className="flex justify-between">
+            <span className="font-sans text-muted-foreground">Shipping</span>
             <span>{formatMoney(order.shipping_cost, order.currency)}</span>
           </div>
           <Separator />
           <div className="flex justify-between font-semibold">
-            <span>Total</span>
+            <span className="font-sans">Total</span>
             <span>{formatMoney(order.total, order.currency)}</span>
           </div>
         </CardContent>

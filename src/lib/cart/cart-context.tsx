@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useReducer,
+  useRef,
   type ReactNode,
 } from "react";
 
@@ -91,6 +92,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, { items: [] });
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     try {
@@ -104,6 +106,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Skip the write on the very first effect pass: at that point `state`
+    // is still the initial (pre-hydration) value, and writing it here would
+    // race the hydrate effect above and clobber whatever was saved.
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items));
     } catch {

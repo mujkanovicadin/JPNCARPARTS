@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth/get-user";
 import { formatMoney } from "@/lib/money";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusTag } from "@/components/status-tag";
+import { statusTone } from "@/lib/orders/status-tone";
 import type { Order } from "@/lib/orders/types";
 
 export default async function OrdersPage() {
@@ -22,6 +23,7 @@ export default async function OrdersPage() {
 
   return (
     <main className="mx-auto max-w-3xl flex-1 px-6 py-12">
+      <p className="font-mono text-xs uppercase tracking-widest text-primary">Account</p>
       <h1 className="mb-6 text-2xl font-semibold">Your orders</h1>
 
       {!orders || orders.length === 0 ? (
@@ -39,15 +41,15 @@ export default async function OrdersPage() {
               <Card className="transition-colors hover:bg-muted/50">
                 <CardContent className="flex items-center justify-between py-4">
                   <div>
-                    <p className="font-medium">Order {order.id.slice(0, 8)}</p>
+                    <p className="font-mono font-medium">{order.id.slice(0, 8)}</p>
                     <p className="text-sm text-muted-foreground">
                       {new Date(order.created_at).toLocaleDateString()} ·{" "}
                       {order.items.length} item{order.items.length === 1 ? "" : "s"}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant="secondary">{order.status}</Badge>
-                    <span className="font-medium">
+                    <StatusTag tone={statusTone(order.status)}>{order.status}</StatusTag>
+                    <span className="font-mono font-tabular font-medium">
                       {formatMoney(order.total, order.currency)}
                     </span>
                   </div>

@@ -7,7 +7,7 @@ describe("Home", () => {
     render(<Home />);
     expect(
       screen.getByRole("heading", {
-        name: /genuine japanese automotive parts/i,
+        name: /japanese automotive parts, delivered internationally/i,
       })
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /browse parts/i })).toBeInTheDocument();

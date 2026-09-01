@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "motion/react";
 import { useCart } from "@/lib/cart/cart-context";
-import { Button } from "@/components/ui/button";
 import type { Product } from "@/lib/catalog/types";
 
 export function AddToCartButton({ product }: { product: Product }) {
@@ -10,7 +10,10 @@ export function AddToCartButton({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
 
   return (
-    <Button
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.97 }}
+      className="w-fit rounded-sm bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       onClick={() => {
         addItem({
           productId: product.id,
@@ -26,6 +29,6 @@ export function AddToCartButton({ product }: { product: Product }) {
       }}
     >
       {added ? "Added to cart" : "Add to cart"}
-    </Button>
+    </motion.button>
   );
 }

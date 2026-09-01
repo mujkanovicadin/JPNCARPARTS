@@ -27,7 +27,7 @@ export default function CheckoutPage() {
     return (
       <main className="mx-auto flex max-w-xl flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
         <h1 className="text-2xl font-semibold">Your cart is empty</h1>
-        <Button render={<Link href="/parts">Browse parts</Link>} />
+        <Button nativeButton={false} render={<Link href="/parts">Browse parts</Link>} />
       </main>
     );
   }
@@ -92,10 +92,10 @@ export default function CheckoutPage() {
         <CardHeader>
           <CardTitle>Order summary</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
+        <CardContent className="flex flex-col gap-3 font-mono font-tabular text-sm">
           {items.map((item) => (
-            <div key={item.productId} className="flex justify-between text-sm">
-              <span>
+            <div key={item.productId} className="flex justify-between">
+              <span className="font-sans">
                 {item.name} × {item.quantity}
               </span>
               <span>
@@ -104,17 +104,17 @@ export default function CheckoutPage() {
             </div>
           ))}
           <Separator />
-          <div className="flex justify-between text-sm">
-            <span>Subtotal</span>
+          <div className="flex justify-between">
+            <span className="font-sans text-muted-foreground">Subtotal</span>
             <span>{formatMoney(subtotalMinorUnits, currency)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span>Shipping</span>
+          <div className="flex justify-between">
+            <span className="font-sans text-muted-foreground">Shipping</span>
             <span>{formatMoney(SHIPPING_COST_MINOR_UNITS, currency)}</span>
           </div>
           <Separator />
           <div className="flex justify-between font-semibold">
-            <span>Total</span>
+            <span className="font-sans">Total</span>
             <span>{formatMoney(total, currency)}</span>
           </div>
         </CardContent>

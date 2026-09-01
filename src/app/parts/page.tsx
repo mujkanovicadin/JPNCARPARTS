@@ -1,11 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { searchProducts } from "@/lib/catalog/products";
 import { categories } from "@/lib/catalog/categories";
-import { formatMoney } from "@/lib/money";
-import { Card, CardContent } from "@/components/ui/card";
+import { ProductCard } from "@/components/product-card";
 import { Input } from "@/components/ui/input";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default async function PartsPage({
@@ -20,9 +18,13 @@ export default async function PartsPage({
     <main className="mx-auto max-w-6xl flex-1 px-6 py-12">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
+          <p className="font-mono text-xs uppercase tracking-widest text-primary">
+            Catalog
+          </p>
           <h1 className="text-2xl font-semibold">Parts</h1>
-          <p className="text-sm text-muted-foreground">
-            {results.length} part{results.length === 1 ? "" : "s"}
+          <p className="font-mono text-sm text-muted-foreground">
+            {String(results.length).padStart(2, "0")} result
+            {results.length === 1 ? "" : "s"}
           </p>
         </div>
         <form className="flex gap-2" action="/parts" method="get">
@@ -40,11 +42,14 @@ export default async function PartsPage({
         </form>
       </div>
 
-      <div className="mb-8 flex flex-wrap gap-2">
+      <div className="mb-8 flex flex-wrap gap-1 border-y border-border/80 py-3 font-mono text-xs uppercase tracking-wide">
         <Link
           href="/parts"
           className={cn(
-            buttonVariants({ variant: !category ? "default" : "outline", size: "sm" })
+            "rounded-sm px-2.5 py-1 transition-colors",
+            !category
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
           All
@@ -54,10 +59,10 @@ export default async function PartsPage({
             key={cat.slug}
             href={`/parts?category=${cat.slug}`}
             className={cn(
-              buttonVariants({
-                variant: category === cat.slug ? "default" : "outline",
-                size: "sm",
-              })
+              "rounded-sm px-2.5 py-1 transition-colors",
+              category === cat.slug
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {cat.name}
@@ -68,32 +73,9 @@ export default async function PartsPage({
       {results.length === 0 ? (
         <p className="text-muted-foreground">No parts match your search.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((product) => (
-            <Link key={product.id} href={`/parts/${product.slug}`}>
-              <Card className="h-full transition-colors hover:bg-muted/50">
-                <CardContent className="flex flex-col gap-3">
-                  <div className="relative aspect-square overflow-hidden rounded-md bg-muted">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase text-muted-foreground">
-                      {product.brand}
-                    </p>
-                    <p className="font-medium">{product.name}</p>
-                  </div>
-                  <p className="font-semibold">
-                    {formatMoney(product.priceMinorUnits, product.currency)}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {results.map((product, i) => (
+            <ProductCard key={product.id} product={product} index={i} />
           ))}
         </div>
       )}
