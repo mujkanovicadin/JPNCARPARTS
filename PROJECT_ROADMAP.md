@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-**Phase 1: E-Commerce MVP** — core implementation complete; two manual Supabase dashboard steps remain before it's fully working end-to-end (see Current Milestone).
+**Phase 2: Product Database** — not yet started. Phase 1 is complete and verified end-to-end against the live database.
 
 ## Completed Milestones
 
@@ -12,7 +12,7 @@
 - Supabase client wiring: browser client, server client, server-only admin client, all reading from validated env vars (`src/lib/env.ts`). Connected to a real Supabase project.
 - Structured JSON logger, global error boundary, CI workflow (lint/typecheck/test/build), Vitest + Playwright configured.
 
-**Phase 1: E-Commerce MVP**
+**Phase 1: E-Commerce MVP — DONE**
 - Mock product catalog (`src/lib/catalog/`): 16 seed products across 5 categories, integer-minor-unit pricing, `formatMoney` helper.
 - Storefront: home page, `/parts` catalog with category filter + text search, `/parts/[slug]` product detail pages (with a compatibility disclaimer since fitment is inferred, not verified — per CLAUDE.md section 10).
 - Cart: client-side context + `localStorage` persistence (`src/lib/cart/`), `/cart` page.
@@ -20,23 +20,23 @@
 - Orders: `orders` table + RLS (`supabase/migrations/0001_orders.sql`), `/checkout` (server-side re-pricing, never trusts client-submitted prices; simulated payment step — no real Stripe yet), `/orders` list and `/orders/[id]` detail.
 - Admin: `/admin` gated by an `ADMIN_EMAILS` allowlist, order list with a status-change control writing to `status_history`.
 - Tests: unit tests for `formatMoney` and the cart reducer; Playwright golden-path e2e (browse → product → add to cart → view cart).
-- Verified locally: lint, typecheck, unit tests, e2e tests, and production build all pass. Manually smoke-tested the storefront and sign-up flow in a real browser.
-- Visual design: committed the storefront to a single dark, Japanese-industrial theme (warm graphite background, one vermillion accent, Geist Sans/Mono with tabular figures, technical/datasheet visual language) per CLAUDE.md section 24. Added `motion` (motion.dev) for entry/hover/press micro-motion, a branded favicon, a footer, and shared `ProductCard`/`StatusTag` components. Found and fixed two real bugs during manual browser verification: a circular `--font-sans` CSS variable that was silently falling back to serif everywhere, and a cart-persistence race condition that wiped a saved cart on full page navigation (now covered by a regression test).
+- Visual design: committed the storefront to a single dark, Japanese-industrial theme (warm graphite background, one vermillion accent, Geist Sans/Mono with tabular figures, technical/datasheet visual language) per CLAUDE.md section 24. Added `motion` (motion.dev) for entry/hover/press micro-motion, a branded favicon, a footer, and shared `ProductCard`/`StatusTag` components.
+- **Verified end-to-end against the live Supabase project** (2026-09-01): migration applied, email confirmation disabled for testing, full path walked in a real browser — sign in → browse → add to cart → checkout (server-priced: $1,199 + $49 shipping = $1,248) → order confirmation → orders list → admin dashboard → status change (PAID → SHIPPED). Confirmed `status_history` logs every transition with actor and timestamp.
+- Two real bugs found and fixed during this verification pass: a circular `--font-sans` CSS variable silently falling back to serif everywhere, and a cart-persistence race condition that wiped a saved cart on full page navigation (now covered by a regression test, `src/lib/cart/cart-provider.test.tsx`).
 
 ## Current Milestone
 
-Two manual one-time steps in the Supabase dashboard are needed before checkout/orders/admin can be exercised end-to-end (can't be scripted — project API keys don't allow arbitrary DDL or auth-setting changes):
+Start Phase 2: Product Database. Per CLAUDE.md sections 9–12, build:
 
-1. **Run `supabase/migrations/0001_orders.sql`** in the SQL Editor to create the `orders` table.
-2. **Email confirmation**: sign-up currently doesn't produce a usable session because Supabase's default "Confirm email" setting blocks it until the confirmation link is clicked. For local/test use, disable it under Authentication → Sign In / Providers → Email, or confirm the test account via the emailed link.
-
-Once those are done: manually walk the full path (sign up → browse → add to cart → checkout → view order → sign in as an `ADMIN_EMAILS` address → change its status in `/admin`) to confirm everything works against the real database, then mark Phase 1 fully done.
+- `products`, `part_numbers` (with supersession/cross-reference chains), `vehicles`, `compatibility` tables — replacing the current static `src/lib/catalog/` TypeScript data.
+- Compatibility rows carry `verification_status` (VERIFIED / SUPPLIER_CONFIRMED / INFERRED / UNKNOWN / NOT_COMPATIBLE) — never silently upgraded.
+- Seed data derived from the existing 16 mock products so the storefront keeps working through the migration.
+- This is the natural point to fold `order.items` into a real `order_items` table referencing `products` (tracked as technical debt below).
 
 ## Upcoming Milestones
 
-- Phase 2: Product database (normalized product/vehicle/compatibility schema + seed data) — replaces the current mock TypeScript catalog
 - Phase 3: Supplier system (manual import first, then automation)
-- Phase 4: Data collection / crawling infrastructure
+- Phase 4: Data collection / crawling infrastructure — **sourcing-channel research done for two candidate marketplaces (see Business Questions/Known Problems); no scraper will be built against either without a resolved legal path**
 - Phase 5: Vehicle compatibility engine
 - Phase 6: International commerce (currency, shipping, tax/duty) — real Stripe integration likely lands here or earlier once test keys are available
 - Phase 7: Automation agents
@@ -46,11 +46,11 @@ Once those are done: manually walk the full path (sign up → browse → add to 
 
 ## Known Problems
 
-- Sign-up doesn't produce a usable session until email confirmation is handled (see Current Milestone above) — not a code bug, a Supabase project setting.
+- **Sourcing via direct scraping is not viable for at least one candidate marketplace.** Researched 2026-09-01: Mercari Japan's ToS (§4.3, Prohibited Conduct policy) explicitly bars commercial resale use of their platform/data — this isn't a gray area, it directly describes this business's model. Yahoo Auctions Japan is murkier (no explicit anti-scraping clause found in the public Auctions Guidelines, but falls under LINE Yahoo's broader ToS restricting automated collection; their public Auctions API (YJDN) appears largely closed to new commercial registrations, unconfirmed). Established proxy/import services (Buyee, ZenMarket) hold official partnerships with both platforms and are the conventional legitimate route — worth pursuing as a partnership/API relationship instead of building a scraper. This needs a business decision, not more code.
 
 ## Technical Debt
 
-- `orders.items` is a jsonb snapshot rather than a normalized `order_items` table — deliberate for Phase 1 since products aren't database-backed yet; revisit when Phase 2 introduces a real `products` table.
+- `orders.items` is a jsonb snapshot rather than a normalized `order_items` table — deliberate for Phase 1 since products aren't database-backed yet; revisit now that Phase 2 introduces a real `products` table.
 - No `profiles`/roles table — admin access is an `ADMIN_EMAILS` env var allowlist. Fine for one or two admins; needs a real roles table before more are added.
 - No rate limiting on auth endpoints or server actions yet.
 - Checkout simulates payment; no real Stripe integration, so no webhook handling exists yet.
@@ -59,9 +59,9 @@ Once those are done: manually walk the full path (sign up → browse → add to 
 
 - Preferred deployment target (Vercel assumed given Next.js, but not confirmed)?
 - Initial brand/company name and domain?
-- Which initial supplier(s) or marketplace(s) will be used for early manual product sourcing, and have their terms of service been reviewed?
+- **Sourcing strategy**: pursue a Buyee/ZenMarket-style proxy partnership, seek direct Yahoo Auctions API access, or find other Japanese suppliers/wholesalers with cleaner commercial terms? (See Known Problems — direct scraping of Mercari Japan is off the table on ToS grounds; Yahoo Auctions needs further legal verification before any automated access.)
 - Stripe account setup — new or existing, and when to wire in real payments?
-- Keep Supabase's default email-confirmation requirement, or disable it for now?
+- Whether to re-enable Supabase's email-confirmation requirement before any real users sign up (currently disabled for local testing).
 
 ## Decisions Requiring Human Approval
 
