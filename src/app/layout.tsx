@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { CartProvider } from "@/lib/cart/cart-context";
+import { SiteHeader } from "@/components/site-header";
+import { getUser } from "@/lib/auth/get-user";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,13 +20,20 @@ export const metadata: Metadata = {
   description: "Discover, verify, and buy Japanese automotive parts internationally.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const user = await getUser();
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <CartProvider>
+          <SiteHeader userEmail={user?.email ?? null} />
+          {children}
+        </CartProvider>
+      </body>
     </html>
   );
 }

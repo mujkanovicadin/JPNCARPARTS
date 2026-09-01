@@ -2,11 +2,28 @@
 
 ## Status
 
-No schema exists yet. This document captures the planned data model per CLAUDE.md; actual migrations will supersede it as Phase 2 begins.
+Phase 1 has one real table (`orders`, see below). The full normalized product/vehicle/compatibility schema described under "Planned Core Tables (Phase 2)" does not exist yet — the current product catalog is static TypeScript data in `src/lib/catalog/`, not database-backed.
 
 ## Engine
 
 PostgreSQL via Supabase. Schema should stay portable enough to migrate off Supabase if ever needed (avoid Supabase-proprietary features where a plain Postgres equivalent exists).
+
+## Current Tables (Phase 1)
+
+### orders
+
+Defined in `supabase/migrations/0001_orders.sql`. A deliberate Phase-1 simplification: items are stored as a `jsonb` snapshot on the row instead of a normalized `order_items` table, because the product catalog itself isn't database-backed yet (Phase 2 introduces real products, and `order_items` becomes a proper foreign-keyed table then).
+
+- `id`, `user_id` (FK → `auth.users`)
+- `status` (constrained to the CLAUDE.md section 17 lifecycle values)
+- `currency`, `items` (jsonb: productId/slug/name/unitPriceMinorUnits/quantity), `subtotal`, `shipping_cost`, `total` (all integer minor units)
+- `shipping_address` (jsonb)
+- `status_history` (jsonb array, appended on every transition — never overwritten, per the "every transition must be logged" rule)
+- `created_at`, `updated_at`
+
+RLS: authenticated users can `select`/`insert` only their own rows (`auth.uid() = user_id`). No `update`/`delete` policy exists for the `authenticated` role — status changes go through the service-role admin client from trusted server code only (`src/app/checkout/actions.ts` for the simulated-payment transition, `src/app/admin/actions.ts` for admin-driven transitions), gated by the `ADMIN_EMAILS` allowlist (`src/lib/auth/is-admin.ts`).
+
+There is no `profiles`/roles table yet — admin access is a Phase-1 simplification via the `ADMIN_EMAILS` env var. A real roles table is natural Phase-2/7 work once there's more than one admin concern.
 
 ## Planned Core Tables (Phase 2)
 

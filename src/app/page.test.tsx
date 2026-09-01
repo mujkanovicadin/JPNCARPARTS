@@ -3,10 +3,13 @@ import { describe, expect, it } from "vitest";
 import Home from "./page";
 
 describe("Home", () => {
-  it("renders the platform heading", () => {
+  it("renders the hero heading and a link to the catalog", () => {
     render(<Home />);
     expect(
-      screen.getByRole("heading", { name: /japanese automotive parts platform/i })
+      screen.getByRole("heading", {
+        name: /genuine japanese automotive parts/i,
+      })
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /browse parts/i })).toBeInTheDocument();
   });
 });
