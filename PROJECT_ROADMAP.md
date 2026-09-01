@@ -21,6 +21,7 @@
 - Admin: `/admin` gated by an `ADMIN_EMAILS` allowlist, order list with a status-change control writing to `status_history`.
 - Tests: unit tests for `formatMoney` and the cart reducer; Playwright golden-path e2e (browse → product → add to cart → view cart).
 - Verified locally: lint, typecheck, unit tests, e2e tests, and production build all pass. Manually smoke-tested the storefront and sign-up flow in a real browser.
+- Visual design: committed the storefront to a single dark, Japanese-industrial theme (warm graphite background, one vermillion accent, Geist Sans/Mono with tabular figures, technical/datasheet visual language) per CLAUDE.md section 24. Added `motion` (motion.dev) for entry/hover/press micro-motion, a branded favicon, a footer, and shared `ProductCard`/`StatusTag` components. Found and fixed two real bugs during manual browser verification: a circular `--font-sans` CSS variable that was silently falling back to serif everywhere, and a cart-persistence race condition that wiped a saved cart on full page navigation (now covered by a regression test).
 
 ## Current Milestone
 
